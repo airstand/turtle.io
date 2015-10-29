@@ -1,7 +1,6 @@
 const path = require("path");
 const regex = require(path.join(__dirname, "regex.js"));
 const url = require("url");
-const http = require("http");
 
 function trim (obj) {
 	return obj.replace(/^(\s+|\t+|\n+)|(\s+|\t+|\n+)$/g, "");
@@ -75,10 +74,6 @@ function iterate (obj, fn) {
 	} else {
 		obj.forEach(fn);
 	}
-}
-
-function message (status) {
-	return http.STATUS_CODES[status];
 }
 
 function merge (a, b) {

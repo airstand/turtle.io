@@ -7,7 +7,7 @@ server.start({
 	default: "test",
 	root: path.join(__dirname, "sites"),
 	logs: {
-		stdout: true
+		stdout: false
 	},
 	vhosts: {
 		test: "test"

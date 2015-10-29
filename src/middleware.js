@@ -39,6 +39,81 @@ function cors (req, res, next) {
 	next();
 }
 
+function headers (req, res, next) {
+		let timer = precise().start(),
+			rHeaders = utility.clone(lRHeaders),
+			lheaders;
+
+		// Decorating response headers
+		if (status !== this.codes.NOT_MODIFIED && status >= this.codes.MULTIPLE_CHOICE && status < this.codes.BAD_REQUEST) {
+			lheaders = rHeaders;
+		} else {
+			lheaders = utility.merge(utility.clone(this.config.headers), rHeaders);
+
+			if (!lheaders.allow) {
+				lheaders.allow = req.allow;
+			}
+
+			if (!lheaders.date) {
+				lheaders.date = new Date().toUTCString();
+			}
+
+			if (req.cors) {
+				lheaders["access-control-allow-origin"] = req.headers.origin || req.headers.referer.replace(/\/$/, "");
+				lheaders["access-control-allow-credentials"] = "true";
+				lheaders["access-control-allow-methods"] = lheaders.allow;
+			} else {
+				delete lheaders["access-control-allow-origin"];
+				delete lheaders["access-control-expose-headers"];
+				delete lheaders["access-control-max-age"];
+				delete lheaders["access-control-allow-credentials"];
+				delete lheaders["access-control-allow-methods"];
+				delete lheaders["access-control-allow-headers"];
+			}
+
+			// Decorating "Transfer-Encoding" header
+			if (!lheaders["transfer-encoding"]) {
+				lheaders["transfer-encoding"] = "identity";
+			}
+
+			// Removing headers not wanted in the response
+			if (!regex.get.test(req.method) || status >= this.codes.BAD_REQUEST || lheaders["x-ratelimit-limit"]) {
+				delete lheaders["cache-control"];
+				delete lheaders.etag;
+				delete lheaders["last-modified"];
+			}
+
+			if (lheaders["x-ratelimit-limit"]) {
+				lheaders["cache-control"] = "no-cache";
+			}
+
+			if (status === this.codes.NOT_MODIFIED) {
+				delete lheaders["last-modified"];
+			}
+
+			if (status === this.codes.NOT_FOUND && lheaders.allow) {
+				delete lheaders["accept-ranges"];
+			}
+
+			if (status >= this.codes.SERVER_ERROR) {
+				delete lheaders["accept-ranges"];
+			}
+
+			if (!lheaders["last-modified"]) {
+				delete lheaders["last-modified"];
+			}
+		}
+
+		lheaders.status = status + " " + (http.STATUS_CODES[status] || "");
+
+		timer.stop();
+		this.signal("headers", function () {
+			return [status, timer.diff()];
+		});
+
+		return lheaders;
+}
+
 function etag (req, res, next) {
 	let cached, headers;
 
